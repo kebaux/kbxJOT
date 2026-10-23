@@ -121,7 +121,9 @@ response SHA-256: 46153ffd72ad1766ee6d1ae8e2b86d99a85a044387523c7700bdbeb1a709b3
 - **Documentation validation:** A scoped `python3` check resolved all 56 local Markdown hrefs from their containing document directories against `git ls-files` (not filesystem existence), checked original SHA-256 strings and captured text quotes against the initial snapshot, verified the appendix's exact observer source/hash, and confirmed the historical diagnostic and saved forensic JSON remained byte-identical. `git diff --check` passed. No live/provider/cubic calls, broad tests, or commits were run for this doc follow-up. The proposed alternative of committing private original transcripts/raw reports was intentionally declined; labeled unavailable path/hash metadata supplies provenance without publishing those inputs.
 - **Freeze / watermark:** Documentation handoff only. The header's `verified-at: 5f334fb` identifies the committed pre-review baseline, not verification of the cloud-review fixes. A single targeted follow-up commit can contain code and docs without a circular self-referencing commit SHA. Parent finalizes current source-content identity and results separately below; no future SHA or fresh model result is invented here.
 
-### Review-fix verification
+### Review-fix verification — initial cloud feedback (`d673c2a`)
+
+This section identifies the first cloud-feedback repair snapshot. Later test-only follow-ups do not retroactively change its measured source-content digest.
 
 - **Source/test repairs:** Request reload and citation-lookup failures remain `source_request`; invocation setup becomes `native_process` only at invocation entry. Only completed native error items are accepted as warnings. Invalid source-ID tests now pin the actual schema or evidence rejection reason. No protocol assets or legacy citation semantics changed.
 - **Red → green:** Two named new regression tests initially failed with six failures (exit 1), then passed unchanged after the fixes (exit 0). Focused executor gate: 54 tests, one Windows-only skip, exit 0.

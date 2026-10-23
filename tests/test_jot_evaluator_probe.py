@@ -85,7 +85,7 @@ class EvaluatorProbeTests(unittest.TestCase):
                     runner = stack.enter_context(patch.object(
                         jot_evaluator, "_run_evaluator", return_value=(b"codex-cli 0.163.0\n", 0),
                     ))
-                    stack.enter_context(patch.object(subprocess, "Popen", side_effect=AssertionError("process forbidden")))
+                    popen = stack.enter_context(patch.object(subprocess, "Popen", side_effect=AssertionError("process forbidden")))
                     if failure == "reload":
                         stack.enter_context(patch.object(Path, "read_text", reload))
                     elif failure == "lookup":
@@ -101,6 +101,7 @@ class EvaluatorProbeTests(unittest.TestCase):
                 runner.assert_called_once()
                 self.assertEqual(runner.call_args.args[0], ["synthetic-cli", "--version"])
                 self.assertEqual(discovery.call_count, 2 if failure == "discovery" else 1)
+                popen.assert_not_called()
                 self.assertNotIn("PRIVATE_SECRET", stream.getvalue())
 
     def test_observer_hops_and_failure_privacy(self):

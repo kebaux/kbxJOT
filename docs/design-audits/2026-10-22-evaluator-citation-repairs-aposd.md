@@ -67,7 +67,9 @@ No additional production refactor is justified by this slice. Retain cohesive so
 
 The audit above describes the original implementation/review snapshot, later committed as `b31678b`, `34855f1`, `4513f29` and `5f334fb`, not a new code review of pending cloud fixes. The ready [PR #11](<https://github.com/kebaux/kbxJOT/pull/11>) subsequently received 12 cloud comments (8 P2, 4 P3); document-relative tracked links are corrected here. The plan appendix preserves the exact historical temporary observer source/hash and explains the one-shot wider-file-access green run; it is not canonical product code or a portable private-input fixture. The progress log records three separately approved Codex evaluation launches and zero Claude launches, with no new run authorization. The three code/test comments are also addressed; the progress log's separate review-fix verification section records the source-content identity and measured results.
 
-### Independent review of the cloud-feedback repairs
+### Independent review of the initial cloud-feedback repairs (`d673c2a`)
+
+The source-content identity and measured results below attest to that committed repair snapshot, not later test-only follow-ups.
 
 A fresh reviewer who did not author the patches reviewed all nine changed files against `5f334fb`, covering all five code-review phases and APoSD red flags. No correctness/design blockers or new suggestions were found. Its independent focused gate ran 10 tests in 0.940s, exit 0. Parent verification ran 170 tests (169 passed, one Windows-only skip), exit 0, and built/checked current wheel and sdist bytes. The five changed Python files retain manifest SHA-256 `bd60d0fa6ab9f853ef9748b7caabaad984bb26d9a7b677d0f254758637f97c6e`, using the sorted SHA/path-line manifest algorithm defined in the progress record. Source request-stage ownership, completed-only warnings and precise ID rejection tests are narrow repairs, not a parser or observer framework refactor. The rare post-run temporary-directory cleanup attribution edge remains an explicit low-risk diagnostic limitation, not a publication-validation bypass.
 
