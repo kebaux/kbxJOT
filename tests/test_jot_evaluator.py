@@ -608,6 +608,17 @@ class CodexEvaluatorRuntimeTests(unittest.TestCase):
         self.set_events([*success[:2], warning, *self.success_events('not JSON')[2:]])
         self.assert_rejected('final_json')
 
+    def test_incomplete_warning_items_cannot_be_rescued_by_a_valid_final(self):
+        success = self.success_events()
+        for kind in ("item.started", "item.updated"):
+            for position in (1, 2, 3):
+                with self.subTest(kind=kind, position=position):
+                    warning = {"type": kind, "item": {
+                        "type": "error", "message": "private-auth-diagnostic",
+                    }}
+                    self.set_events([*success[:position], warning, *success[position:]])
+                    self.assert_rejected("stage=event_sequence")
+
     def test_malformed_event_and_item_types_reject_with_safe_sequence_stage(self):
         for invalid_type in ([], {}, None, 123):
             for event in ({'type': invalid_type, 'message': 'private-auth-diagnostic'},

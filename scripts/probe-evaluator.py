@@ -117,7 +117,6 @@ def probe(source, evaluator, output_dir):
             if size == 0:
                 raise ValueError("empty request")
             report(stage, "PASS", request_bytes=size)
-            stage = "native_process"
             return request
 
         def observed_run(*args, **kwargs):
@@ -142,6 +141,7 @@ def probe(source, evaluator, output_dir):
 
         def observed_invoke(*args, **kwargs):
             nonlocal stage
+            stage = "native_process"
             response = invoke(*args, **kwargs)
             stage = "native_decode"
             if not isinstance(response, dict):

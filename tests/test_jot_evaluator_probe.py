@@ -59,6 +59,50 @@ class EvaluatorProbeTests(unittest.TestCase):
         self.assertNotIn("PRIVATE_SECRET", json.dumps(summary))
         self.assertNotIn("PRIVATE_SECRET", json.dumps(_PROBE.native_summary(b'{"structured_output": {"x":"PRIVATE_SECRET"}}', "claude")))
 
+    def test_real_preinvoke_failures_keep_source_request_stage(self):
+        for failure in ("reload", "lookup", "discovery"):
+            with self.subTest(failure=failure), tempfile.TemporaryDirectory() as temporary:
+                import jot
+
+                directory = Path(temporary)
+                source = directory / "source.md"
+                source.write_text(jot._build_transcript_markdown(
+                    {"title": "Fixture", "channel": "Fixture", "duration": 20},
+                    "[00:04] PRIVATE_SECRET", "https://www.youtube.com/watch?v=WkBPX-oDMnA", "Fixture",
+                ))
+                read_text = Path.read_text
+
+                def reload(path, *args, **kwargs):
+                    if path.name.endswith(".request.json"):
+                        raise ValueError("PRIVATE_SECRET")
+                    return read_text(path, *args, **kwargs)
+
+                with ExitStack() as stack, redirect_stdout(io.StringIO()) as stream:
+                    discovery = stack.enter_context(patch.object(
+                        jot_evaluator, "find_evaluator",
+                        side_effect=["synthetic-cli", ValueError("PRIVATE_SECRET")],
+                    ))
+                    runner = stack.enter_context(patch.object(
+                        jot_evaluator, "_run_evaluator", return_value=(b"codex-cli 0.163.0\n", 0),
+                    ))
+                    stack.enter_context(patch.object(subprocess, "Popen", side_effect=AssertionError("process forbidden")))
+                    if failure == "reload":
+                        stack.enter_context(patch.object(Path, "read_text", reload))
+                    elif failure == "lookup":
+                        stack.enter_context(patch.object(jot_agent, "_source_catalog", side_effect=ValueError("PRIVATE_SECRET")))
+                    code = _PROBE.probe(source, "codex", directory)
+                records = [json.loads(line) for line in stream.getvalue().splitlines()]
+                self.assertEqual(code, 1)
+                self.assertEqual(records[-1]["hop"], "native_process" if failure == "discovery" else "source_request")
+                self.assertEqual(records[-1]["status"], "FAIL")
+                self.assertEqual(records[-1]["native_invocations"], 0)
+                self.assertTrue(any(r["hop"] == "source_request" and r["status"] == "PASS" for r in records))
+                self.assertEqual(len(list(directory.glob("*.request.json"))), 1)
+                runner.assert_called_once()
+                self.assertEqual(runner.call_args.args[0], ["synthetic-cli", "--version"])
+                self.assertEqual(discovery.call_count, 2 if failure == "discovery" else 1)
+                self.assertNotIn("PRIVATE_SECRET", stream.getvalue())
+
     def test_observer_hops_and_failure_privacy(self):
         for mode, expected_hop in (("process", "native_process"), ("decode", "native_decode"), ("validate", "local_validation"), ("empty", "publication"), ("bypass", "source_request"), ("bypass_validation", "local_validation"), ("summary", "result"), ("success", "result")):
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:

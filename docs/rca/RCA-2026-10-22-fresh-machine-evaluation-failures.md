@@ -1,12 +1,15 @@
 # RCA: Two independent evaluation failures on a fresh computer
 
 **Date:** 2026-10-22\
+**Last updated:** 2026-10-23 (documentation/provenance follow-up)\
 **Severity:** High — neither attempted evaluator produced the requested watch page; source artifacts survived.\
-**Status:** Causes identified; no product fixes implemented. Original full Codex stdout unavailable.\
+**Historical triage status (checkout `1222923`):** Causes identified; no product fixes had been implemented at that point. Original full Codex stdout unavailable. Later implementation/review status is in the linked execution record below.\
 **Mode:** Trace + forensic + environment comparison\
 **Checkout examined:** `1222923` (2026-10-16).
 
-> **Implementation follow-up:** The findings and verification record below describe the original pre-fix checkout. See the [repair plan](<docs/plans/2026-10-22-reliable-evaluator-citations-jxnf.md>) and [execution evidence](<docs/progress/2026-10-22-reliable-evaluator-citations-jxnf.md>) for subsequent changes and live-verification outcomes. The original [offline diagnostic](<docs/rca/fresh-machine-evidence.py>) deliberately asserts the old broken behavior; it is historical evidence, not the repaired-code acceptance gate.
+> **Implementation follow-up:** The findings and verification record below describe the original pre-fix checkout. See the [repair plan](<../plans/2026-10-22-reliable-evaluator-citations-jxnf.md>) and [execution evidence](<../progress/2026-10-22-reliable-evaluator-citations-jxnf.md>) for subsequent changes and live-verification outcomes. The original [offline diagnostic](<fresh-machine-evidence.py>) deliberately asserts the old broken behavior; it is historical evidence, not the repaired-code acceptance gate.
+
+Source links below are checkout-relative locators; historical source line ranges and behavior refer to examined revision `1222923`, not a claim that the repaired files still implement that behavior.
 
 ## Summary
 
@@ -14,9 +17,25 @@ This was not one installation failure. Caption capture succeeded twice. Claude r
 
 ## Evidence and confidence
 
-- Incident narrative and quoted trivial Codex reproduction: [message](</Users/kebaux/Downloads/message.txt>).
-- Saved [Claude response](</Users/kebaux/Downloads/jot-transcripts/Stanford CS146S How always-on agents work.request.response.json#L104-L120>), [first request](</Users/kebaux/Downloads/jot-transcripts/Stanford CS146S How always-on agents work.request.json>), [second request](</Users/kebaux/Downloads/jot-transcripts/Stanford CS146S How always-on agents work (1).request.json>), [first transcript](</Users/kebaux/Downloads/jot-transcripts/Stanford CS146S How always-on agents work.md>), and [second transcript](</Users/kebaux/Downloads/jot-transcripts/Stanford CS146S How always-on agents work (1).md>).
-- [Offline diagnostic](<docs/rca/fresh-machine-evidence.py>) and [machine-readable results, including artifact SHA-256 hashes](<docs/rca/2026-10-22-fresh-machine-evidence.json>). Run the diagnostic from the repository root. It is incident-specific, reads the Downloads artifacts, makes no provider calls, modifies no source artifacts, and deliberately asserts the current broken behavior. It is not an end-to-end provider probe.
+The incident inputs below are **local-only investigator evidence**, not included in this repository and unavailable to other readers in a clean checkout. These are labeled path/hash metadata, not download links. No source transcripts, raw reports, credentials, or other original inputs are being committed.
+
+```text
+incident narrative: /Users/kebaux/Downloads/message.txt
+narrative SHA-256: not recorded in the original forensic result
+artifact root: /Users/kebaux/Downloads/jot-transcripts/
+Stanford CS146S How always-on agents work.md
+  SHA-256: 4c2f0224bc5a6c2ba5318337209baa961f982f48bb8d3be10522226e8d4d381c
+Stanford CS146S How always-on agents work.request.json
+  SHA-256: 8d1512d4ed2a2c6758d656bb8a8af52f72a6c1c0bca60e571ea89e5e749d9047
+Stanford CS146S How always-on agents work.request.response.json
+  SHA-256: a8da3593350fdc10fd9aa5a3b7b9f6e608ee9354546ba5033f6c3ff309e81bd1
+Stanford CS146S How always-on agents work (1).md
+  SHA-256: c9187a916ba19fb457f8c02cabd78bdc7d7f272bf7a5b31f10713f1ae671cf17
+Stanford CS146S How always-on agents work (1).request.json
+  SHA-256: ede7de7653a6ed192dd5ca31a6e84e55b9cf09dfbdb0537f948cdb3988ca5192
+```
+
+- [Offline diagnostic](<fresh-machine-evidence.py>) and [saved machine-readable results, including artifact SHA-256 hashes](<2026-10-22-fresh-machine-evidence.json>) are tracked provenance. The unchanged diagnostic makes no provider calls or original-artifact changes and intentionally asserts the **old broken behavior**, including the old schema and decoder rejection. It is **not a repaired-code acceptance gate** and is not runnable as-is from a clean checkout. An investigator needs the five original hash-matching artifacts at the hard-coded Downloads directory, project dependencies, repository-root working directory, and the historical `1222923` implementation/schema to replay its original assertions. The narrative is additional evidence for the quoted reconstructed Codex stream, not a file read by the diagnostic. Use the saved result when those private inputs/environment are unavailable; do not fabricate them or run this diagnostic as a current acceptance test.
 - **Confirmed directly:** source/request equality, both request digests, packaged schema/rubric equality, identical transcript speech, 1,357 caption lines at 1,351 distinct timestamps, duration 2,717 seconds, schema-valid Claude response, exactly one bad citation, full local validation after one in-memory timestamp substitution, deterministic decoder rejection caused solely by adding the warning item.
 - **Confirmed from upstream tagged source:** warning-item semantics, conditional host-discovery bypass, and removal of this specific warning by 0.162.1.
 - **Reported, not independently recaptured:** original Codex 0.153.4 runtime, 79-second evaluation, return code 0 and 13,386 input tokens from the trivial reproduction, host skill/plugin counts. The provided directory has five artifacts and no original Codex event stream or response. Its absence is consistent with decoder failure, not proof of that failure by itself.
@@ -25,11 +44,11 @@ This was not one installation failure. Caption capture succeeded twice. Claude r
 
 | Time | Event | Provenance |
 |---|---|---|
-| 2026-10-14 | Citation lookup/copy guidance introduced in `ea82b38`; timestamp and quote remain independently writable. | Git blame of [citation generation](<jot_agent.py#L339-L353>). |
-| 2026-10-15 | Codex integration and unconditional error-item rejection introduced in `3df112c`. | Git blame of [decoder](<jot_evaluator.py#L194-L231>). |
-| 2026-10-21 03:27 UTC (Oct 20, 23:27 EDT) | First saved caption capture; Claude assessment later rejected. | [First transcript metadata](</Users/kebaux/Downloads/jot-transcripts/Stanford CS146S How always-on agents work.md#L5-L10>); run order from incident narrative. |
-| 2026-10-21 03:31 UTC (Oct 20, 23:31 EDT) | Second capture; Codex evaluation later rejected. | [Second transcript metadata](</Users/kebaux/Downloads/jot-transcripts/Stanford CS146S How always-on agents work (1).md#L5-L10>); run order from narrative. |
-| Later, exact time unknown | Reporter reproduced Codex warning rejection using a trivial boolean schema. | Quoted event stream in [message:64–104](</Users/kebaux/Downloads/message.txt#L64-L104>). |
+| 2026-10-14 | Citation lookup/copy guidance introduced in `ea82b38`; timestamp and quote remain independently writable. | Git blame of [citation generation](<../../jot_agent.py#L339-L353>). |
+| 2026-10-15 | Codex integration and unconditional error-item rejection introduced in `3df112c`. | Git blame of [decoder](<../../jot_evaluator.py#L194-L231>). |
+| 2026-10-21 03:27 UTC (Oct 20, 23:27 EDT) | First saved caption capture; Claude assessment later rejected. | Local-only first transcript metadata, lines 5–10 (inventory above); run order from incident narrative. |
+| 2026-10-21 03:31 UTC (Oct 20, 23:31 EDT) | Second capture; Codex evaluation later rejected. | Local-only second transcript metadata, lines 5–10 (inventory above); run order from narrative. |
+| Later, exact time unknown | Reporter reproduced Codex warning rejection using a trivial boolean schema. | Quoted event stream in the local-only incident narrative, lines 64–104 (inventory above). |
 | 2026-10-22 EDT | This investigation reproduced local failures, checked tagged upstream source, and ran the existing suite. | Diagnostic results and verification below. |
 
 Capture times are not evaluator start/end times. The 45-second Claude and 79-second Codex durations are reported, not independently timed here. No successful baseline from the other computer was supplied.
@@ -49,15 +68,15 @@ The source is unambiguous:
 [31:49] all compression is lossy. So you have to
 ```
 
-See [source:971–972](</Users/kebaux/Downloads/jot-transcripts/Stanford CS146S How always-on agents work.md#L971-L972>) and [response:117–118](</Users/kebaux/Downloads/jot-transcripts/Stanford CS146S How always-on agents work.request.response.json#L117-L118>). The quote occurs in exactly one timestamp bucket: **1907**, not 1909.
+The local-only first transcript, lines 971–972, and saved Claude response, lines 117–118, supplied this observation (inventory above; unavailable to other readers). The quote occurs in exactly one timestamp bucket: **1907**, not 1909.
 
 ### Cause-first chain / grounded whys
 
-1. The [response contract](<jot_assets/evaluation-response.schema.json#L67-L75>) lets the model supply a timestamp and quote independently; JSON shape constraints do not bind the pair to a source entry.
-2. Jot supplies correct candidate pairs and [explicit copying instructions](<jot_assets/evaluator-instructions.md#L9-L18>), but these are model guidance rather than a construction guarantee.
+1. The [response contract](<../../jot_assets/evaluation-response.schema.json#L67-L75>) lets the model supply a timestamp and quote independently; JSON shape constraints do not bind the pair to a source entry.
+2. Jot supplies correct candidate pairs and [explicit copying instructions](<../../jot_assets/evaluator-instructions.md#L9-L18>), but these are model guidance rather than a construction guarantee.
 3. Claude returns an exact quote paired with the following caption's timestamp. We can observe the wrong pair; we cannot know its internal reasoning or whether it copied from lookup versus the original transcript.
-4. The [local evidence validator](<jot_agent.py#L200-L215>) looks only in source spans at the supplied timestamp and raises on the first invalid citation.
-5. [Publication validates before rendering/writing](<jot_agent.py#L292-L305>), so the entire report is withheld. The [response is saved first](<jot_agent.py#L355-L366>), explaining why a response survives without evaluation HTML.
+4. The [local evidence validator](<../../jot_agent.py#L200-L215>) looks only in source spans at the supplied timestamp and raises on the first invalid citation.
+5. [Publication validates before rendering/writing](<../../jot_agent.py#L292-L305>), so the entire report is withheld. The [response is saved first](<../../jot_agent.py#L355-L366>), explaining why a response survives without evaluation HTML.
 
 **Root cause of the invalid association:** a redundant citation representation whose cross-field consistency depends on fallible model copying. **Reason no partial report appeared:** deliberate all-or-nothing publication, not a broken renderer. The validator did catch the problem; the prompt and schema did not prevent it.
 
@@ -86,9 +105,9 @@ The reporter's trivial reproduction says the process exited 0 and emitted, in or
 
 1. Codex distinguishes a non-fatal **item** error from a fatal **stream/turn** error. The [0.153.4 event definitions](<https://github.com/openai/codex/blob/rust-v0.153.4/codex-rs/exec/src/exec_events.rs#L131-L132>) explicitly call the item non-fatal. [Top-level error](<https://github.com/openai/codex/blob/rust-v0.153.4/codex-rs/exec/src/exec_events.rs#L22-L36>) is a separate unrecoverable event.
 2. Its [upstream regression test](<https://github.com/openai/codex/blob/rust-v0.153.4/codex-rs/exec/src/event_processor_with_jsonl_output_tests.rs#L65-L90>) maps a runtime warning to an error item while leaving status `Running`. This is intended protocol behavior, not evidence of failed authentication.
-3. Jot's [decoder:210–213](<jot_evaluator.py#L210-L213>) instead treats every `item.type == "error"` as fatal. It raises immediately and never reads the later final message/completion.
-4. The [exception handler:227–231](<jot_evaluator.py#L227-L231>) discards the internal reason and substitutes generic login/connection/version advice. That diagnostic directs attention to the wrong layer.
-5. Since invocation never returns a decoded object, [response persistence and publication](<jot_agent.py#L350-L366>) are never reached. This explains a preserved request without a Codex response or HTML.
+3. Jot's [decoder:210–213](<../../jot_evaluator.py#L210-L213>) instead treats every `item.type == "error"` as fatal. It raises immediately and never reads the later final message/completion.
+4. The [exception handler:227–231](<../../jot_evaluator.py#L227-L231>) discards the internal reason and substitutes generic login/connection/version advice. That diagnostic directs attention to the wrong layer.
+5. Since invocation never returns a decoded object, [response persistence and publication](<../../jot_agent.py#L350-L366>) are never reached. This explains a preserved request without a Codex response or HTML.
 
 **Root cause:** jot's native-event adapter implements the wrong failure semantics. Successful process exit plus a completed turn cannot rescue it because it rejects earlier in the stream. Auth readiness checks cannot detect this parser mismatch.
 
@@ -106,7 +125,7 @@ This establishes the decoder defect. It does **not** prove the missing original 
 
 ### The isolation setting is weaker than its name suggests
 
-Jot [uses an empty working directory but inherits the environment except session identifiers](<jot_evaluator.py#L259-L307>), retaining home/auth locations. Empty project context is not an empty host skill catalog.
+Jot [uses an empty working directory but inherits the environment except session identifiers](<../../jot_evaluator.py#L259-L307>), retaining home/auth locations. Empty project context is not an empty host skill catalog.
 
 In upstream 0.153.4:
 
@@ -119,7 +138,7 @@ This explains how a home skill catalog can survive jot's intended suppression. I
 
 ### The version difference is a plausible trigger difference, not the fundamental decoder cause
 
-The [README records verification against 0.162.1](<README.md#L9-L13>); the incident reports 0.153.4. Source comparison matters:
+The [README records verification against 0.162.1](<../../README.md#L9-L13>); the incident reports 0.153.4. Source comparison matters:
 
 - [0.153.4 skill rendering](<https://github.com/openai/codex/blob/rust-v0.153.4/codex-rs/ext/skills/src/render.rs#L93-L114>) warns when average description truncation crosses its threshold.
 - [0.162.1 rendering](<https://github.com/openai/codex/blob/rust-v0.162.1/codex-rs/ext/skills/src/render.rs#L94-L113>) no longer emits that truncation-only warning; omitted skills can still produce a warning.
@@ -129,18 +148,18 @@ Consequently, an upgrade may remove this particular trigger while leaving the ad
 
 ## Why the tests were green
 
-- [Citation tests](<tests/test_jot_agent.py#L229-L243>) correctly require moved/fabricated quotes to fail. This incident confirms that safety invariant, while exposing a separate generation-reliability weakness.
-- [Codex test:583](<tests/test_jot_evaluator.py#L574-L589>) explicitly lists an error item inside an otherwise successful turn as invalid. The test encodes the integration mistake.
-- The [fake Codex executable](<tests/test_jot_evaluator.py#L409-L454>) checks command-line arguments and returns a hand-authored successful sequence. It does not exercise the installed Codex skill loader or runtime warning behavior. Passing flag assertions proves flag construction, not effective isolation.
-- [Setup readiness](<jot_config.py#L129-L145>) checks executable presence and login status only, not version compatibility or native-event decoding. That matches the current setup description; readiness is not an evaluator contract test.
+- [Citation tests](<../../tests/test_jot_agent.py#L229-L243>) correctly require moved/fabricated quotes to fail. This incident confirms that safety invariant, while exposing a separate generation-reliability weakness.
+- [Codex test:583](<../../tests/test_jot_evaluator.py#L574-L589>) explicitly lists an error item inside an otherwise successful turn as invalid. The test encodes the integration mistake.
+- The [fake Codex executable](<../../tests/test_jot_evaluator.py#L409-L454>) checks command-line arguments and returns a hand-authored successful sequence. It does not exercise the installed Codex skill loader or runtime warning behavior. Passing flag assertions proves flag construction, not effective isolation.
+- [Setup readiness](<../../jot_config.py#L129-L145>) checks executable presence and login status only, not version compatibility or native-event decoding. That matches the current setup description; readiness is not an evaluator contract test.
 
-## Repair recommendations — not implemented
+## Repair recommendations — not yet implemented at historical triage
 
-1. **Repair Codex event interpretation without weakening publication.** In [the adapter](<jot_evaluator.py#L194-L231>), distinguish non-fatal item errors from `turn.failed`, top-level errors, nonzero process status, malformed events, missing completion, and invalid final JSON. Still require the complete local report validator. Replace the test that mandates the false rejection with a realistic warning-plus-success case and retain fatal-event controls.
-2. **Give citations a single authoritative source identity.** Change the generation protocol in [schema](<jot_assets/evaluation-response.schema.json#L67-L75>), [lookup creation](<jot_agent.py#L343-L353>), and [instructions](<jot_assets/evaluator-instructions.md#L9-L18>) so the model references a stable entry ID; derive timestamps locally. If shorter quotes remain supported, validate the exact substring against that referenced entry. Preserve the source authority, unknown-ID rejection, repeated/equal-timestamp cases, and range checks. This removes the independent timestamp-copying failure, not every possible citation/semantic error. Keep original output auditable and handle protocol-version compatibility explicitly.
+1. **Repair Codex event interpretation without weakening publication.** In [the adapter](<../../jot_evaluator.py#L194-L231>), distinguish non-fatal item errors from `turn.failed`, top-level errors, nonzero process status, malformed events, missing completion, and invalid final JSON. Still require the complete local report validator. Replace the test that mandates the false rejection with a realistic warning-plus-success case and retain fatal-event controls.
+2. **Give citations a single authoritative source identity.** Change the generation protocol in [schema](<../../jot_assets/evaluation-response.schema.json#L67-L75>), [lookup creation](<../../jot_agent.py#L343-L353>), and [instructions](<../../jot_assets/evaluator-instructions.md#L9-L18>) so the model references a stable entry ID; derive timestamps locally. If shorter quotes remain supported, validate the exact substring against that referenced entry. Preserve the source authority, unknown-ID rejection, repeated/equal-timestamp cases, and range checks. This removes the independent timestamp-copying failure, not every possible citation/semantic error. Keep original output auditable and handle protocol-version compatibility explicitly.
 3. **Do not silently repair evidence or publish partial invalid reports.** Neighbor-timestamp reassignment changes provenance and is ambiguous for repeated speech. Retrying changes cost and the documented workflow. Both are policy changes, not substitutes for a better citation representation; neither is required for this diagnosis.
 4. **Report the actual rejection stage safely.** Expose bounded stage/reason codes and counts, separating process failure, event decoding, JSON/schema, and citation validation. Collect all citation failures to show scope. Do not print arbitrary provider warning text: it can contain source text, paths, or authentication details. Preserve privacy rather than guessing what substrings are sensitive.
-5. **Resolve the actual isolation contract.** Fresh session, empty project root, ignored config, disabled tools, and no host skill discovery are different properties. Either support and demonstrate real skill-catalog isolation with native auth preserved, or document the remaining host discovery accurately in [the coordinator contract](<jot_assets/agent-workflow.md#L16-L18>). Merely setting another unverified flag or observing no warning is not proof. A temporary `CODEX_HOME` alone may still leave home-based agent skills and auth handling unresolved.
+5. **Resolve the actual isolation contract.** Fresh session, empty project root, ignored config, disabled tools, and no host skill discovery are different properties. Either support and demonstrate real skill-catalog isolation with native auth preserved, or document the remaining host discovery accurately in [the coordinator contract](<../../jot_assets/agent-workflow.md#L16-L18>). Merely setting another unverified flag or observing no warning is not proof. A temporary `CODEX_HOME` alone may still leave home-based agent skills and auth handling unresolved.
 6. **Make supported CLI compatibility explicit.** Record and check a tested capability/version policy rather than treating a successful login as proof of evaluation compatibility. A minimum version can reduce known triggers, but cannot replace correct event semantics.
 
 ## Prevention and unobserved boundaries
@@ -161,18 +180,18 @@ After implementation, closure requires: warning-plus-success accepted while fata
 
 ## Verification record and limitations
 
-Commands, from the repository root (temporary interpreter path is specific to this investigation; any project environment with dependencies installed can run them):
+Historical commands ran with `/tmp/jot-triage-standalone.AYWSQP/bin/python` (ephemeral measured runner, not a mandatory dependency). Normalized equivalents below require a dependency-installed checkout; the diagnostic additionally requires the historical implementation and private investigator inputs described above. These commands are not claimed newly run:
 
 ```bash
-/tmp/jot-triage-standalone.AYWSQP/bin/python docs/rca/fresh-machine-evidence.py
-/tmp/jot-triage-standalone.AYWSQP/bin/python -m unittest discover -s tests -v
+uv run python docs/rca/fresh-machine-evidence.py
+uv run python -m unittest discover -s tests -v
 ```
 
 **142 discovered, 141 passed, 1 native-Windows-only skip; exit 0, 10.076 seconds.** This is unchanged-product-code behavior, including the test that enforces the warning-rejection bug. Dependencies were freshly resolved from declared ranges, not recreated from the incident machine or the lockfile. Runtime: standalone CPython 3.12.15 in a disposable temporary venv.
 
 Earlier verification attempts failed for investigation-environment reasons: the system Python is 3.9.6 with missing dependencies; the GUI-bundled Python rejected newly installed native modules on macOS Team-ID/library-validation grounds; an initial standalone run depended on `PYTHONPATH`, which the containment fixture deliberately clears, causing one child-import/PID test failure. Giving the standalone venv its own dependency path resolved the latter without changing product/test code. These are not additional causes of the reported incident.
 
-The [offline diagnostic](<docs/rca/fresh-machine-evidence.py>) exercises the actual parser/validator/decoder, not stubbed replacements. Its Codex stream is explicitly reconstructed from the report. The single timestamp counterfactual stays in memory. No report was published, original evidence modified, provider authentication read, or live evaluator invoked.
+The [offline diagnostic](<fresh-machine-evidence.py>) exercises the actual parser/validator/decoder, not stubbed replacements. Its Codex stream is explicitly reconstructed from the report. The single timestamp counterfactual stays in memory. No report was published, original evidence modified, provider authentication read, or live evaluator invoked.
 
 ## Open questions
 

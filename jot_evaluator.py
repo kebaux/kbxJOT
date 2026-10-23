@@ -222,8 +222,9 @@ def _decode_codex(stdout):
                 item = event.get("item")
                 if not isinstance(item, dict) or not isinstance(item.get("type"), str):
                     raise ValueError("invalid item")
-                # Native error items are non-fatal runtime warnings. Their arbitrary
-                # messages are neither interpreted as failure nor exposed to users.
+                # Only completed error items are recognized non-fatal warnings.
+                if item["type"] == "error":
+                    raise ValueError("incomplete warning item")
                 if kind == "item.completed" and item.get("type") == "agent_message":
                     response_text = item.get("text")
             elif kind == "turn.completed" and turn_started:

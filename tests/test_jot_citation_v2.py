@@ -54,10 +54,20 @@ class CitationV2Tests(unittest.TestCase):
                 self.assertIn(f'&t={seconds})', markdown.read_text())
 
     def test_unknown_negative_boolean_and_noninteger_ids_fail_without_outputs(self):
-        for source_id in (999, -1, True, False, 0.0, 0.5, '0', None):
+        for source_id, reason in (
+            (999, r'^Evidence validation:.*unknown_or_invalid_source_id'),
+            (-1, r'^Response schema:.*source_id: constraint=minimum;'),
+            (True, r'^Response schema:.*source_id: constraint=type;'),
+            (False, r'^Response schema:.*source_id: constraint=type;'),
+            # JSON Schema accepts integral floats; the strict identity guard does not.
+            (0.0, r'^Evidence validation:.*unknown_or_invalid_source_id'),
+            (0.5, r'^Response schema:.*source_id: constraint=type;'),
+            ('0', r'^Response schema:.*source_id: constraint=type;'),
+            (None, r'^Response schema:.*source_id: constraint=type;'),
+        ):
             with self.subTest(source_id=source_id):
                 self.response = id_response(self.packet['request_id'], source_id)
-                self.rejected('Response|Evidence')
+                self.rejected(reason)
 
     def test_old_pairs_and_extra_citation_fields_fail(self):
         for citation in ({'timestamp': 4, 'quote': 'Cache invalidation'},

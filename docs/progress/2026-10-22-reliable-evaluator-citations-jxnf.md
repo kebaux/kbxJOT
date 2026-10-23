@@ -1,16 +1,16 @@
 # Progress: Reliable evaluator citations and native warning handling
 
-**Plan:** [implementation plan](<docs/plans/2026-10-22-reliable-evaluator-citations-jxnf.md>)\
+**Plan:** [implementation plan](<../plans/2026-10-22-reliable-evaluator-citations-jxnf.md>)\
 **Started:** 2026-10-22\
-**Last updated:** 2026-10-22\
-**Status:** Complete — implementation, reviews, package/local tests and current-machine Codex report path verified; Claude/original-machine/host-catalog limits remain explicit below.
-<!-- phase: 2 · verified-at: 1222923 + uncommitted implementation; protocol snapshot 58c7ab5422bf2606ab1dda53a15166fd90779a48fa5a0d84e27db069d3953977 -->
+**Last updated:** 2026-10-23\
+**Status:** Initial implementation snapshot complete and published as ready [PR #11](<https://github.com/kebaux/kbxJOT/pull/11>); historical verification below. User-approved cloud-review repairs are verified as recorded below; publication and thread-resolution status belong to the PR history. No new live evaluation is authorized. Claude/original-machine/host-catalog limits remain explicit.
+<!-- phase: 2 · verified-at: 5f334fb (committed pre-review baseline; product: 4513f29); historical protocol snapshot 58c7ab5422bf2606ab1dda53a15166fd90779a48fa5a0d84e27db069d3953977; review-fix verification is recorded separately below, not identified by a circular own-commit SHA -->
 
 ## Phase 1: Repair the local generation-to-publication contract
 
 **Status:** Complete — independent cold review accepted after the malformed-discriminator correction and final archive checks. This is completion of the local contract repair, not a claim that every installed/native-provider branch succeeded.
 
-**Class / revision:** Standard; `main` at `1222923`, zero commits since plan watermark. Verification includes uncommitted Phase-1 changes and concurrently implemented Phase-2 work. No commits, model calls, or host configuration/authentication changes by the Phase-1 executor.
+**Original execution class / revision:** Standard; `main` at `1222923`, then zero commits since the plan watermark. The original verification included then-uncommitted Phase-1 changes and concurrent Phase-2 work. No commits, model calls, or host configuration/authentication changes by the Phase-1 executor. The later authorized four-commit snapshot is recorded below; this paragraph is not the current commit status.
 
 - [x] 1.1 Codex warning/event diagnostics and regression controls.
 - [x] 1.2 Versioned ID citations, legacy schema, packaging and instructions.
@@ -24,6 +24,8 @@
 - Parent-authorized packaging reconciliation: include `scripts` in sdist only, since the Phase-2 probe test imports its script. Wheel remains runtime-only. No probe/coordinator/README edits by this executor.
 
 ### Verification evidence — 2026-10-22
+
+Historical temporary interpreter, archive and snapshot paths in this record are measured provenance, not required dependencies or reusable checkout locations. For a dependency-installed checkout, the generic local test command is `uv run python -m unittest discover -s tests`; no new full-suite run is claimed by this documentation follow-up.
 - Phase-start snapshot retained at `/var/folders/rg/l2cylb1j32zfqzr4gwnh9l9m0000gn/T/jot-phase1-before.ik4uq8og`; captures tracked and non-ignored untracked files, preserving modes/symlinks and prior RCA/plan work.
 - Baseline warning-acceptance reproduction: actual decoder raises generic ValueError, exit 1 (full command/output in plan). Reconfirmed directly before product edits.
 - Baseline full suite collected by parent through `/tmp/jot-triage-standalone.AYWSQP/bin/python -m unittest discover -s tests`: 142 run, 1 skipped, OK; exit 0, 10.501 seconds. This is unchanged-code supporting evidence, not repair verification.
@@ -40,7 +42,7 @@
 
 ### Limitations / handoff
 - No Phase-1 executor live calls. Parent reports its separately authorized Codex0.163.0 attempt failed at native process exit1 with stdout0 in0.718s and zero thread/turn events; decoder/validator were not reached. Cause remains unknown because stderr is discarded by design. No retry was made by this executor. This offline verification does not claim provider recovery or native catalog isolation.
-- Phase-1 product/test files frozen pending parent acceptance; no final completion watermark updated. Parent handles remaining independent review and any authorized live diagnostics, then Phase-2 reconciliation.
+- At this Phase-1 handoff, product/test files were frozen pending parent acceptance and Phase-2 reconciliation. That historical handoff preceded the later accepted reviews and four authorized commits below; follow-up verification must receive its own parent-finalized watermark.
 
 ## Phase 2: Observe and document the native isolation boundary
 
@@ -53,7 +55,7 @@
 
 ### Verification and review evidence — 2026-10-22
 - Native feasibility: Codex 0.163.0 has no established exact-exec nonbillable catalog interface. Standalone app-server catalog RPC and debug prompt generation have non-equivalent configuration/lifecycle; saved-login startup may itself contact a backend. No alternate RPC was run. Plan amended after user approved one real saved-transcript evaluation per installed evaluator, rather than shipping an always-unsupported pseudo-probe.
-- [Probe](<scripts/probe-evaluator.py>) and [five scaffolding tests](<tests/test_jot_evaluator_probe.py>) exercise consent guard, actual missing executable lookup, privacy-safe malformed-event summaries, artifact setup failure, and successful/failing observed delegate paths. Focused suite: 5 tests passed, exit 0. Fake provider tests are not native/provider evidence.
+- [Probe](<../../scripts/probe-evaluator.py>) and [five scaffolding tests](<../../tests/test_jot_evaluator_probe.py>) exercise consent guard, actual missing executable lookup, privacy-safe malformed-event summaries, artifact setup failure, and successful/failing observed delegate paths. Focused suite: 5 tests passed, exit 0. Fake provider tests are not native/provider evidence.
 - Parent repeated the actual negative control with `PATH=''` and absolute standalone Python running `scripts/probe-evaluator.py` on the saved source: final `native_cli` FAIL, `native_invocations=0`, probe exit 1, explicitly asserted by shell. No model call.
 - Actual Claude branch: same probe, evaluator `claude`, explicit output directory under `transcripts/verification-2026-10-22/claude`: `native_cli` FAIL, `native_invocations=0`, exit 1. Claude executable absent from PATH and common local/npm locations. No install, provider substitution, or Claude evaluation performed.
 - First approved Codex attempt: version 0.163.0 preflight PASS; source request PASS (72,159 bytes); native process exit 1, stdout 0 bytes, zero thread/turn/agent events, 0.718s. Decoder/validator never reached. No automatic retry.
@@ -66,15 +68,27 @@
 
 ### Live artifacts and remaining limits
 
-- [Generated Codex HTML](<transcripts/verification-2026-10-22/codex-diagnostic/Stanford CS146S How always-on agents work.evaluation.html>) — 776,736 bytes; SHA-256 `103d73cd667922fe7c56956bace530bb9ccb2331ccb28a3bffc0f9dc22c75ef7`.
-- [Markdown companion](<transcripts/verification-2026-10-22/codex-diagnostic/Stanford CS146S How always-on agents work.evaluation.md>) — 66,505 bytes, original transcript preserved as the unchanged suffix.
-- [Actual v2 request](<transcripts/verification-2026-10-22/codex-diagnostic/Stanford CS146S How always-on agents work (1).request.json>) and [raw model response](<transcripts/verification-2026-10-22/codex-diagnostic/Stanford CS146S How always-on agents work (1).request.response.json>) — **107 ID-only citations**, independent parent revalidation passed; raw response bytes unchanged; response SHA-256 `46153ffd72ad1766ee6d1ae8e2b86d99a85a044387523c7700bdbeb1a709b302`.
+These are **local-only, gitignored evidence**, not included in this repository and unavailable to other readers in a clean checkout. Paths below are forensic metadata, not download links. Do not commit source transcripts, raw reports or credentials. Sizes/hashes are historical observations, not a new rerun.
+
+```text
+local evidence root: transcripts/verification-2026-10-22/codex-diagnostic/
+HTML: Stanford CS146S How always-on agents work.evaluation.html
+bytes: 776736
+SHA-256: 103d73cd667922fe7c56956bace530bb9ccb2331ccb28a3bffc0f9dc22c75ef7
+Markdown: Stanford CS146S How always-on agents work.evaluation.md
+bytes: 66505; original transcript preserved as unchanged suffix
+request: Stanford CS146S How always-on agents work (1).request.json
+raw response: Stanford CS146S How always-on agents work (1).request.response.json
+response SHA-256: 46153ffd72ad1766ee6d1ae8e2b86d99a85a044387523c7700bdbeb1a709b302
+```
+
+- The saved v2 request/raw response contained **107 ID-only citations**; independent parent revalidation passed and raw response bytes remained unchanged.
 - Successful live run used the actual saved incident source, not a repaired assessment or mock. It verifies Codex 0.163.0 on this machine under approved runtime permissions. It is not a fresh caption fetch, Claude verification, original-computer/0.153.4 verification, semantic fact-check, or proof of host skill isolation. The live stream contained no warning items; the precise original warning regression is proved separately by native-event fixture red→green and upstream semantics.
-- [Persisted design/cold-review audit](<docs/design-audits/2026-10-22-evaluator-citation-repairs-aposd.md>) records the resolved discriminator defect, legacy compatibility pin, accepted diagnostic-hook tradeoff and final review scope.
+- [Persisted design/cold-review audit](<../design-audits/2026-10-22-evaluator-citation-repairs-aposd.md>) records the resolved discriminator defect, legacy compatibility pin, accepted diagnostic-hook tradeoff and final review scope.
 
 ### Constraints / observations
 - No active Beads workspace; do not initialize one.
-- No commit authorization. No host credential/configuration modifications; no silent billable evaluator calls.
+- Original execution had no commit authorization; later explicit four-commit/push approval is recorded below. No host credential/configuration modifications; no new evaluator runs are authorized by the historical call budget.
 - Original machine/version and full Codex event stream are unavailable. A local replay is not full-video recovery.
 - The incident diagnostic intentionally asserts old broken behavior; retain it as historical RCA evidence rather than changing its output to imply recovery.
 
@@ -85,7 +99,8 @@
 - Git initially inferred a local-hostname author because no explicit identity was configured. Before any push, the user selected the existing repository identity `kebaux <kebaux@proton.me>`; corrected the single unpushed commit and supplied identity per command, without editing global Git configuration.
 - Fresh full working-tree suite before committing: 168 discovered, 167 passed, one native-Windows skip; 11.539s, exit 0. First two committed snapshots were separately archived outside the checkout, asserted actual module provenance and passed their full suites (145 and 163 discovered, respectively; each one Windows skip).
 - Final committed product snapshot `4513f29` was independently archived outside the checkout and passed all 168 tests (167 passed, one Windows skip), 11.390s, exit 0. Built wheel and sdist from that archive with `python -m build --no-isolation`; asserted both schema assets and source-distribution probe/test inclusion, exit 0.
-- GitHub CLI authenticated successfully for the existing repository. Local `cubic` executable is absent from PATH. No cubic review, silent installation, substitute cubic result, ready transition, or cloud review is claimed. The draft PR must remain draft until that preflight gate is resolved or the user explicitly chooses otherwise.
+- At the initial commit-workflow preflight, GitHub CLI authenticated but `cubic` could not be resolved from the harness shell's PATH; this did not establish that it was uninstalled. The existing executable was subsequently located and used directly without reinstalling. No review or ready transition was claimed at that initial point. This was superseded by the later review/ready status below, not a current draft-only requirement.
+- The initial four commits are `b31678b` (native warnings), `34855f1` (source IDs), `4513f29` (probe), and `5f334fb` (evidence docs). They remain the initial PR snapshot, not the cloud-review follow-up commit.
 
 ## Running Notes
 
@@ -94,4 +109,25 @@
 - Cold review completed against actual decoder, request/evidence validator, lookup generation, schemas, packaging and RCA. Parent accepted substantive plan corrections: keep ID-only v2 and strict legacy v1; preserve conditional evidence requirements; do not equate stable source identity with semantic correctness. No tasks cut/deferred or product files edited.
 - Native catalog feasibility resolved as unsupported/unobserved on the documented local surface; do not equate app-server/debug paths with exec. After explicit user usage/credit consent, Phase 2 changed to the actual evaluator-flow probe, with cold amendment review and the unsupported catalog guarantee clearly narrowed.
 - User granted a separate diagnostic attempt after immediate native startup failure, then approved exact-command wider-filesystem retry through the tool permission mechanism. No application-level automatic retry or bypass of schema/evidence validation was added.
-- Parent accepts the final Phase-1 and Phase-2 independent code reviews; package/runtime proof and live-environment outcomes remain separately labeled. No commit made.
+- Parent accepts the final Phase-1 and Phase-2 independent code reviews; package/runtime proof and live-environment outcomes remain separately labeled. No commit had been made at that original execution boundary; the later user-approved four commits above supersede that status.
+
+
+## Review follow-up — 2026-10-23
+
+- [PR #11](<https://github.com/kebaux/kbxJOT/pull/11>) is ready. Local cubic completed three rounds with **1, 1, 0 findings**. Two findings were declined after actual runtime checks; no production fixes were made merely to appease those findings. This records the supplied review history, not a new cubic invocation here.
+- Cloud review of the initial `5f334fb` snapshot reported **12 comments (8 P2, 4 P3)**. The user approved fixes on 2026-10-23. The nine documentation comments and three code/test comments are addressed in this follow-up; separate source, regression, archive and cold-review evidence is recorded below.
+- Documentation changes repair document-relative tracked links, label unavailable local evidence, preserve forensic hashes/quotes, clarify all three distinct Codex launch approvals, and capture historical observer provenance in the plan appendix. The historical diagnostic is unchanged and is not an acceptance gate.
+- Total historical Codex evaluation-process launches: **3**, each separately explicitly approved: initial one-per-installed-evaluator allowance; one private diagnostic; exact diagnostic command with one-shot wider-filesystem tool approval. The first two exited 1 before events with zero stdout; only the third produced validated HTML (64.356s, 107 IDs). Zero observed events does **not** establish what happened inside the provider or whether any charge occurred. Claude was absent and had **0** evaluation launches. These approvals do not authorize fresh model runs now.
+- **Documentation validation:** A scoped `python3` check resolved all 56 local Markdown hrefs from their containing document directories against `git ls-files` (not filesystem existence), checked original SHA-256 strings and captured text quotes against the initial snapshot, verified the appendix's exact observer source/hash, and confirmed the historical diagnostic and saved forensic JSON remained byte-identical. `git diff --check` passed. No live/provider/cubic calls, broad tests, or commits were run for this doc follow-up. The proposed alternative of committing private original transcripts/raw reports was intentionally declined; labeled unavailable path/hash metadata supplies provenance without publishing those inputs.
+- **Freeze / watermark:** Documentation handoff only. The header's `verified-at: 5f334fb` identifies the committed pre-review baseline, not verification of the cloud-review fixes. A single targeted follow-up commit can contain code and docs without a circular self-referencing commit SHA. Parent finalizes current source-content identity and results separately below; no future SHA or fresh model result is invented here.
+
+### Review-fix verification
+
+- **Source/test repairs:** Request reload and citation-lookup failures remain `source_request`; invocation setup becomes `native_process` only at invocation entry. Only completed native error items are accepted as warnings. Invalid source-ID tests now pin the actual schema or evidence rejection reason. No protocol assets or legacy citation semantics changed.
+- **Red → green:** Two named new regression tests initially failed with six failures (exit 1), then passed unchanged after the fixes (exit 0). Focused executor gate: 54 tests, one Windows-only skip, exit 0.
+- **Independent cold review:** A separate reviewer read the complete nine-file diff against `5f334fb`, all five review phases and APoSD red flags; no blockers. Its focused gate ran 10 tests in 0.940s, exit 0. This is separate from the earlier three local cubic rounds.
+- **Parent full suite:** `/tmp/jot-triage-standalone.AYWSQP/bin/python -m unittest discover -s tests` ran 170 tests in 11.304s: **169 passed, one native-Windows skip, exit 0**. The interpreter is measured temporary-run provenance, not a required checkout path.
+- **Distribution gate:** Built wheel and sdist with `python -m build --no-isolation`; archive bytes matched the current evaluator/agent, both versioned schemas, probe and three touched test files; exit 0.
+- **Documentation gate:** 56 tracked-target local hrefs passed, original forensic hashes/quotes retained, historical observer source/hash exact, historical diagnostic/result bytes unchanged, and `git diff --check` passed.
+- **Non-circular source identity:** The five modified Python files have manifest SHA-256 `bd60d0fa6ab9f853ef9748b7caabaad984bb26d9a7b677d0f254758637f97c6e`. Algorithm: sort repository-relative paths, form UTF-8 lines `<SHA256(file bytes)>  <path>\n`, then SHA-256 the concatenated manifest. Scope: the evaluator, development probe, citation-v2 test, evaluator test and probe test changed in this review repair. Documentation is excluded to avoid hashing a digest into its own input.
+- No new Codex/Claude evaluation, original-evidence mutation or host-auth/configuration change was performed. This verification does not upgrade the recorded Claude/original-machine/catalog-isolation limits.
