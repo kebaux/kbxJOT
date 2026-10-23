@@ -8,14 +8,14 @@ Return exactly one JSON object matching the supplied response schema. No Markdow
 
 ## Evidence rules
 
-The invocation also supplies `citation_lookup`, derived directly from the source. Prefer copying a complete citation object from this lookup: its timestamp is already integer seconds and its quote is exact. Do not convert the time again or use the following segment's timestamp. You may shorten a quote only to an exact substring of that same segment; never combine adjacent entries into one quote. The full source document remains authoritative.
+This is request version 2. The invocation supplies `citation_lookup`, derived directly from the source: each entry has `source_id`, the exact physical-line `quote`, and its authoritative `timestamp` (integer seconds or null). Each nonblank speech line has a distinct zero-based integer ID, even when quotes or timestamps repeat. The full source document remains authoritative.
 
 - Copy `request_id` exactly from the packet. Do not reconstruct it or calculate a replacement.
-- Narrative fields and quotes must be nonblank, single-line strings without CR or LF.
-- A Citation has exactly `timestamp` and `quote`. Quotes must be exact, case-sensitive, single-line substrings of the source speech, including its whitespace.
-- Timed source segments begin at line-start `[MM:SS]` or `[HH:MM:SS]` markers. Use the segment's timestamp as integer seconds, not the approximate time a word might have been spoken. A quote must come from that same segment.
-- For genuinely untimed source, use null citation timestamps and no temporal ranges. Do not invent timestamps.
-- A Range has `start`, `end`, `reason`, and at least one Citation in `evidence`. Start and end are integer seconds; `0 <= start < end`. Evidence must satisfy `start <= citation.timestamp < end`: start included, end excluded.
+- Narrative fields must be nonblank, single-line strings without CR or LF.
+- A Citation contains exactly `source_id`, for example `{"source_id": 0}`. Select the matching lookup entry's ID; never return `timestamp` or `quote` in a Citation, invent IDs, or combine entries. Jot resolves exact text and timing locally.
+- Timed source segments begin at line-start `[MM:SS]` or `[HH:MM:SS]` markers. Lookup timestamps refer to the segment start, not the approximate time a word was spoken.
+- Genuinely untimed entries have null timestamps. They may support takeaways and signals but not temporal ranges. Do not invent timing for untimed material.
+- A Range has `start`, `end`, `reason`, and at least one Citation in `evidence`. Start and end are integer seconds; `0 <= start < end`. Every referenced entry must have `start <= timestamp < end`: start included, end excluded.
 - Keep ranges within any known video duration. Unknown duration is not zero, and the last source timestamp does not establish full coverage or the end of the video.
 
 ## Assessment rules

@@ -36,6 +36,7 @@ only-include = [
     "jot_assets/evaluator-instructions.md",
     "jot_assets/evaluation-rubric.md",
     "jot_assets/evaluation-response.schema.json",
+    "jot_assets/evaluation-response-v1.schema.json",
     "jot_assets/Libron-Regular.woff2",
     "jot_assets/Libron-Bold.woff2",
     "jot_assets/Libron-Italic.woff2",
@@ -57,6 +58,7 @@ only-include = [
     "jot_assets/evaluator-instructions.md",
     "jot_assets/evaluation-rubric.md",
     "jot_assets/evaluation-response.schema.json",
+    "jot_assets/evaluation-response-v1.schema.json",
     "jot_assets/Libron-Regular.woff2",
     "jot_assets/Libron-Bold.woff2",
     "jot_assets/Libron-Italic.woff2",
@@ -70,5 +72,6 @@ only-include = [
     ".env.example",
     ".gitignore",
     "tests",
+    "scripts",
 ]
 exclude = ["**/__pycache__/**", "**/*.py[cod]", "**/.DS_Store"]

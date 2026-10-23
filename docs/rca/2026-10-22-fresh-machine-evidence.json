@@ -1,0 +1,37 @@
+{
+  "repository_head": "12229230188e898c5a0954df392f723baf9b9a53",
+  "mode": "offline; no paid model calls; original artifacts unchanged",
+  "artifact_sha256": {
+    "Stanford CS146S How always-on agents work (1).md": "c9187a916ba19fb457f8c02cabd78bdc7d7f272bf7a5b31f10713f1ae671cf17",
+    "Stanford CS146S How always-on agents work (1).request.json": "ede7de7653a6ed192dd5ca31a6e84e55b9cf09dfbdb0537f948cdb3988ca5192",
+    "Stanford CS146S How always-on agents work.md": "4c2f0224bc5a6c2ba5318337209baa961f982f48bb8d3be10522226e8d4d381c",
+    "Stanford CS146S How always-on agents work.request.json": "8d1512d4ed2a2c6758d656bb8a8af52f72a6c1c0bca60e571ea89e5e749d9047",
+    "Stanford CS146S How always-on agents work.request.response.json": "a8da3593350fdc10fd9aa5a3b7b9f6e608ee9354546ba5033f6c3ff309e81bd1"
+  },
+  "requests_match_saved_sources": true,
+  "request_digests_and_packaged_protocol_match": true,
+  "transcripts_identical_except_capture_metadata": true,
+  "caption_lines": 1357,
+  "distinct_timestamps": 1351,
+  "duration_seconds": 2717,
+  "response_schema_valid": true,
+  "citations_total": 43,
+  "invalid_citations": [
+    {
+      "location": "response.takeaways[5].evidence[2]",
+      "timestamp": 1909,
+      "quote": "a point where it needs to summarize and",
+      "matching_timestamps": [
+        1907
+      ]
+    }
+  ],
+  "claude_original_validation_error": "takeaways[5]: quote is not an exact source span at timestamp 1909: 'a point where it needs to summarize and'.",
+  "claude_single_timestamp_counterfactual_passes_full_validation": true,
+  "codex_replay_provenance": "synthetic event reconstruction from message.txt; not the original stdout",
+  "codex_without_warning": {
+    "ok": true
+  },
+  "codex_with_warning_error": "Codex did not return a valid structured evaluation from a successfully completed turn. Check `codex login`, your connection, and CLI version; no evaluation was accepted.",
+  "codex_fatal_event_controls_rejected": true
+}
