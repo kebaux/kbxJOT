@@ -10,7 +10,7 @@ Turn a YouTube video into a portable **HTML watch page**: a WATCH / SKIM / SKIP 
 - An installed, authenticated evaluator: [Codex CLI](https://developers.openai.com/codex/cli) **or** [Claude Code](https://code.claude.com/docs/en/setup). You only need the one you choose.
 - A host assistant that can run local commands and deliver files. It does **not** need subagent delegation, and its model can differ from your evaluator.
 
-Evaluation reuses your selected CLI's login; subscription limits or usage charges still apply. No additional jot API key is required. Verified with Codex 0.162.1 and Claude Code 2.1.277.
+Evaluation reuses your selected CLI's login; subscription limits or usage charges still apply. No additional jot API key is required. The current saved-transcript-to-HTML path was verified with Codex 0.163.0; earlier verification used Codex 0.162.1 and Claude Code 2.1.277. Claude's current live path remains unverified on this machine because its CLI is absent. Version/login checks alone do not establish evaluation compatibility or host-skill isolation.
 
 ## Set up once
 
@@ -78,13 +78,14 @@ uv run jot open 'transcripts/talk.evaluation.html'
 
 Double-clicked HTML remains readable offline, but YouTube playback requires HTTP and internet. No public hosting or YouTube API key is needed. If the video disallows embedding, use its direct YouTube link.
 
-Takeaways have one **Start** link; watch/skip ranges stay inline. Signal-versus-fluff ratings have no timestamp links or quote rows. Full evidence remains in the saved response JSON and source transcript.
+Takeaways have one **Start** link; watch/skip ranges stay inline. Signal-versus-fluff ratings have no timestamp links or quote rows. New requests use v2 citation IDs: the original source determines each ID's exact quote and timestamp locally. Audit v2 evidence using the saved raw response **and request** (which contains the authoritative source); the response alone is not a standalone quote catalog. Saved v1 requests/responses remain supported with strict quote/timestamp validation.
 
 - **English captions unavailable?** The default evaluation workflow stops, even when captions exist in another language. It never silently downloads audio or uses paid transcription.
 - **Evaluator or validation failure?** jot stops without publishing a report. The saved transcript remains available. There is no fallback to host-assistant self-evaluation or automatic retry.
 - **Timeout, interruption, or excessive evaluator output?** jot stops the evaluator process tree without publishing a report. Evaluation has a 10-minute deadline and an 8 MiB limit on each output stream.
+- **Native CLI exits before any events?** A restricted assistant runner can block the CLI's normal runtime-state writes even when version/login checks pass. Use the boundary probe below to identify the failed hop, and request appropriate host permissions rather than changing credentials or bypassing validation.
 
-Evaluators run fresh sessions outside your project, without the host conversation. Claude Code is tool-free. **Codex is not tool-free:** it uses a read-only sandbox with restrictive settings; some built-in tools remain exposed.
+Evaluators run fresh sessions outside your project, without the host conversation. Claude Code is tool-free. **Codex is not tool-free:** it uses a read-only sandbox with restrictive settings; some built-in tools remain exposed. Ignoring user config/rules and requesting skipped host-skill discovery are best-effort restrictions, **not a proven empty skill catalog**: host skills may still be discovered. Native authentication is retained; an empty working directory does not isolate home-based skills.
 
 Local validation checks the full response schema, exact source quotes, timestamps, and ranges—not factual truth, semantic quality, or complete reading. Assessments are speech-only.
 
@@ -99,6 +100,21 @@ uv run jot --render-html 'transcripts/talk.evaluation.md'
 ```
 
 This updates the HTML, leaving the saved Markdown and response JSON unchanged.
+
+### Probe a real evaluator boundary
+
+The development probe below runs **one real evaluation** of a saved transcript, consuming the selected CLI's usage/credits. Obtain permission first; it does not retry or repair evidence. It reuses jot's actual invocation, decoding, full validation, and publication path, not a substitute provider adapter:
+
+```bash
+uv run python scripts/probe-evaluator.py 'transcripts/talk.md' \
+  --evaluator codex --allow-provider-call --output-dir /tmp/jot-probe-codex
+```
+
+Choose `--evaluator claude` for Claude Code. Omit `--output-dir` to delete temporary request/response/report artifacts on exit; an explicit directory preserves newly created artifacts without overwriting existing files. Run on the affected machine and CLI version. A safe, non-billable negative control is to run the probe with an absolute Python path and an empty `PATH`: it must fail at `native_cli` before any evaluation (do not run a replacement evaluation after a failed live attempt without new permission).
+
+Output is JSONL: `hop`, `status`, elapsed time, and bounded protocol counts/booleans, never raw source/provider/authentication text. Exit 0 means this saved transcript produced nonempty validated Markdown and HTML; exit 1 names the first failed hop, and cancellation returns 130. Missing usage consent exits 2 without invoking an evaluator. The observed chain is `native_cli` → `source_request` → `native_process` → `native_decode` → `local_validation` → `publication`. `artifact_storage` names setup/cleanup failures. Observer tests are not provider evidence: establish a real missing-CLI red control, then run the consented real target for green.
+
+**Explicit blind spots:** fresh caption capture is outside this saved-transcript probe. Provider internals and `native_exec_effective_skill_catalog` remain `UNOBSERVED`, even on a successful report. Codex 0.163.0's standalone app-server `skills/list` is an adjacent catalog interface, not equivalent to exec's discovery/selection/rendering path; it lacks exec's `--ignore-user-config` switch, and startup with saved authentication can contact the backend. `debug prompt-input` uses a different extension registry. Neither interface nor warning absence proves jot's catalog isolation. This probe does not call them. See the [fresh-machine RCA](<docs/rca/RCA-2026-10-22-fresh-machine-evaluation-failures.md>) for the incident and remaining boundaries.
 
 ## Licenses
 

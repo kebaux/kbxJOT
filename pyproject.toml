@@ -72,5 +72,6 @@ only-include = [
     ".env.example",
     ".gitignore",
     "tests",
+    "scripts",
 ]
 exclude = ["**/__pycache__/**", "**/*.py[cod]", "**/.DS_Store"]
