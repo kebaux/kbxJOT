@@ -195,22 +195,35 @@ def _decode_codex(stdout):
     """Accept a structured final message only after one successfully completed native turn."""
     response_text = None
     thread_started = turn_started = turn_completed = False
+    stage = "event_utf8"
     try:
-        for line in stdout.decode("utf-8").splitlines():
+        lines = stdout.decode("utf-8").splitlines()
+        for line in lines:
             if not line.strip():
                 continue
+            stage = "event_json"
             event = _strict_json(line, "Codex event")
+            stage = "event_sequence"
             if not isinstance(event, dict) or turn_completed:
                 raise ValueError("invalid event sequence")
             kind = event.get("type")
+            if not isinstance(kind, str):
+                raise ValueError("invalid event type")
             if kind == "thread.started" and not thread_started and not turn_started:
                 thread_started = True
             elif kind == "turn.started" and thread_started and not turn_started:
                 turn_started = True
+            elif (kind == "item.completed" and thread_started
+                  and isinstance(event.get("item"), dict) and event["item"].get("type") == "error"):
+                # Startup/runtime warnings may arrive before turn.started. They
+                # cannot substitute for any thread, turn, final, or completion frame.
+                continue
             elif kind in {"item.started", "item.updated", "item.completed"} and turn_started:
                 item = event.get("item")
-                if not isinstance(item, dict) or item.get("type") == "error":
+                if not isinstance(item, dict) or not isinstance(item.get("type"), str):
                     raise ValueError("invalid item")
+                # Native error items are non-fatal runtime warnings. Their arbitrary
+                # messages are neither interpreted as failure nor exposed to users.
                 if kind == "item.completed" and item.get("type") == "agent_message":
                     response_text = item.get("text")
             elif kind == "turn.completed" and turn_started:
@@ -218,16 +231,19 @@ def _decode_codex(stdout):
             else:
                 # Includes turn.failed/error, even if later output looks successful.
                 raise ValueError("failed or unexpected native event")
+        stage = "turn_incomplete"
         if not turn_completed or not isinstance(response_text, str):
             raise ValueError("no successfully completed final message")
+        stage = "final_json"
         response = _strict_json(response_text, "Codex final response")
+        stage = "final_object"
         if not isinstance(response, dict):
             raise ValueError("final message is not an object")
         return response
     except (ValueError, UnicodeError):
         raise ValueError(
             "Codex did not return a valid structured evaluation from a successfully completed turn. "
-            "Check `codex login`, your connection, and CLI version; no evaluation was accepted."
+            f"stage={stage}; no evaluation was accepted."
         ) from None
 
 

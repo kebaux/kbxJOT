@@ -578,15 +578,53 @@ class CodexEvaluatorRuntimeTests(unittest.TestCase):
         invalid_sequences = [
             [], success[:-1], success[1:], [success[0], *success[2:]],
             success + [success[-1]],
+            [success[0], success[2], success[1], success[-1]],
+            [{"type": "item.completed", "item": {"type": "error"}}, *success],
+            [*success, {"type": "item.completed", "item": {"type": "error"}}],
             [*success[:2], {"type": "turn.failed", "error": {"message": "private-auth-diagnostic"}}, *success[2:]],
             [*success[:3], {"type": "error", "message": "private-auth-diagnostic"}, success[-1]],
-            [*success[:2], {"type": "item.completed", "item": {"type": "error"}}, *success[2:]],
             [*success[:2], {"type": "item.completed", "item": None}, *success[2:]],
         ]
         for sequence in invalid_sequences:
             with self.subTest(sequence=sequence):
                 self.set_events(sequence)
                 self.assert_rejected()
+
+    def test_warning_items_preserve_success_but_never_rescue_fatal_results(self):
+        warning = {"type": "item.completed", "item": {
+            "id": "warning", "type": "error", "message": "private-auth-diagnostic",
+        }}
+        success = self.success_events()
+        for position in (1, 2, 3):
+            for message in ('private-auth-diagnostic', '', None):
+                with self.subTest(position=position, message=message):
+                    warning['item']['message'] = message
+                    self.set_events([*success[:position], warning, *success[position:]])
+                    self.assertEqual(self.invoke(), {"accepted": True})
+        for ending in ([], [{"type": "turn.failed", "error": {"message": "private-auth-diagnostic"}}],
+                       [{"type": "error", "message": "private-auth-diagnostic"}]):
+            self.set_events([*success[:2], warning, success[2], *ending])
+            self.assert_rejected()
+        self.set_events([*success[:2], warning, *self.success_events('not JSON')[2:]])
+        self.assert_rejected('final_json')
+
+    def test_malformed_event_and_item_types_reject_with_safe_sequence_stage(self):
+        for invalid_type in ([], {}, None, 123):
+            for event in ({'type': invalid_type, 'message': 'private-auth-diagnostic'},
+                          {'type': 'item.completed', 'item': {
+                              'type': invalid_type, 'message': 'private-auth-diagnostic'}}):
+                with self.subTest(event=event):
+                    success = self.success_events()
+                    self.set_events([*success[:2], event, *success[2:]])
+                    self.assert_rejected('stage=event_sequence')
+
+    def test_decoder_reports_bounded_stages_not_provider_text(self):
+        for payload, stage in ((b'\xff', 'event_utf8'), (b'not JSON', 'event_json'),
+                               (b'{"type":"error","message":"private-auth-diagnostic"}', 'event_sequence')):
+            with self.subTest(stage=stage):
+                with self.assertRaisesRegex(ValueError, stage) as raised:
+                    jot_evaluator._decode_codex(payload)
+                self.assertNotIn('private-auth-diagnostic', str(raised.exception))
 
     def test_failed_or_malformed_final_messages_never_return_response(self):
         for text in ("[]", "null", "plain text", '{"a":1,"a":2}', '{"a":NaN}', '{"a":1e999}'):
