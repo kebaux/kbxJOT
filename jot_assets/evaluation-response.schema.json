@@ -67,10 +67,9 @@
     "Citation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["timestamp", "quote"],
+      "required": ["source_id"],
       "properties": {
-        "timestamp": {"type": ["integer", "null"], "minimum": 0},
-        "quote": {"$ref": "#/$defs/Text"}
+        "source_id": {"type": "integer", "minimum": 0}
       }
     },
     "Range": {

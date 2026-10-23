@@ -1,9 +1,11 @@
 """Source requests, jot-owned evaluator execution, and evidence-gated publication.
 
-Fresh evaluator processes receive only the trusted protocol and source packet.
-Local checks establish structural and exact-evidence validity, not factual truth.
+Jot supplies the trusted protocol and source packet to fresh evaluator processes;
+native CLIs may additionally discover host skills. Local checks establish structural
+and exact-evidence validity, not factual truth.
 """
 
+import copy
 import hashlib
 import json
 import math
@@ -34,12 +36,12 @@ def _strict_json(text: str, label: str):
         result = {}
         for key, value in pairs:
             if key in result:
-                raise ValueError(f"{label}: duplicate JSON key {key!r}.")
+                raise ValueError(f"{label}: duplicate JSON key.")
             result[key] = value
         return result
 
     def invalid_constant(value):
-        raise ValueError(f"{label}: non-finite JSON constant {value} is not allowed.")
+        raise ValueError(f"{label}: non-finite JSON number is not allowed.")
 
     def finite_float(value):
         number = float(value)
@@ -59,9 +61,10 @@ def _digest(packet: dict) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
-def _trusted_protocol() -> tuple[str, dict]:
+def _trusted_protocol(version: int = 2) -> tuple[str, dict]:
     rubric = read_asset("evaluation-rubric.md")
-    schema = _strict_json(read_asset("evaluation-response.schema.json"), "Packaged response schema")
+    name = "evaluation-response-v1.schema.json" if version == 1 else "evaluation-response.schema.json"
+    schema = _strict_json(read_asset(name), "Packaged response schema")
     try:
         Draft202012Validator.check_schema(schema)
     except SchemaError as exc:
@@ -102,7 +105,7 @@ def prepare_evaluation(source: Path, background: str | None = None, output_dir: 
     _, metadata, transcript = parse_transcript_document(document)
     _segments(transcript, _duration(metadata["Duration"]))
     rubric, schema = _trusted_protocol()
-    packet = {"version": 1, "source_document": document, "viewer_background": background,
+    packet = {"version": 2, "source_document": document, "viewer_background": background,
               "rubric": rubric, "response_schema": schema}
     packet["request_id"] = _digest(packet)
     serialized = json.dumps(packet, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
@@ -164,18 +167,38 @@ def _segments(transcript: str, duration: float | None) -> dict[int, list[str]]:
     return segments
 
 
-def _validate(request: dict, response: dict) -> tuple[str, dict]:
+def _source_catalog(transcript: str, duration: float | None) -> list[dict]:
+    """Derive stable zero-based physical-line identities, retaining exact text and untimed prelude."""
+    _segments(transcript, duration)  # Share source ordering, timestamp and duration invariants with v1.
+    catalog = []
+    timestamp = None
+    for line in re.split(r"\r\n|\r|\n", transcript):
+        marker = re.match(r"^\[([^\]]+)\]", line)
+        if marker and re.match(r"\d+:", marker.group(1)):
+            timestamp = _timestamp(marker.group(1), "Transcript")
+            line = line[marker.end():]
+        if line.strip():
+            catalog.append({"source_id": len(catalog), "timestamp": timestamp, "quote": line})
+    return catalog
+
+
+def _validate(request: dict, response: dict) -> tuple[str, dict, dict]:
+    """Validate the entire trusted protocol and evidence, returning a separate authoritative render view.
+
+    Neither request nor raw response is modified. Evidence failures are aggregated
+    using fixed reasons and bounded structural locations, never source/model text.
+    """
     fields = {"version", "source_document", "viewer_background", "rubric", "response_schema", "request_id"}
     if not isinstance(request, dict) or set(request) != fields:
         raise ValueError("Request must contain exactly version, source_document, viewer_background, rubric, response_schema, request_id.")
-    if type(request["version"]) is not int or request["version"] != 1:
-        raise ValueError("Request version must be integer 1.")
+    if type(request["version"]) is not int or request["version"] not in (1, 2):
+        raise ValueError("Request version must be integer 1 or 2.")
     if not isinstance(request["source_document"], str):
         raise ValueError("Request source_document must be text.")
     background = request["viewer_background"]
     if background is not None and not isinstance(background, str):
         raise ValueError("Request viewer_background must be text or null.")
-    rubric, schema = _trusted_protocol()
+    rubric, schema = _trusted_protocol(request["version"])
     if request["rubric"] != rubric:
         raise ValueError("Request rubric differs from the packaged trusted rubric; prepare a new request.")
     # Compare canonical JSON too: Python equality would equate true with 1.
@@ -189,46 +212,68 @@ def _validate(request: dict, response: dict) -> tuple[str, dict]:
     if errors:
         error = errors[0]
         location = ".".join(str(part) for part in error.absolute_path) or "response"
-        raise ValueError(f"Response {location}: {error.message}")
+        # jsonschema's message can embed the rejected private value or unknown keys.
+        raise ValueError(f"Response schema: {location}: constraint={error.validator}; failures={len(errors)}.")
     if response["request_id"] != digest:
         raise ValueError("Response request_id does not match this request.")
     if not (background and background.strip()) and response["novelty"]["personal"] != "unknown":
         raise ValueError("Response novelty.personal must be unknown without viewer background.")
     duration = _duration(metadata["Duration"])
     segments = _segments(transcript, duration)
+    catalog = _source_catalog(transcript, duration) if request["version"] == 2 else []
+    resolved = copy.deepcopy(response)
+    failures = []
 
-    def validate_evidence(evidence, location):
-        for citation in evidence:
-            timestamp, quote = citation["timestamp"], citation["quote"]
-            if segments:
-                if timestamp is None:
-                    raise ValueError(f"{location}: null citation timestamp is only valid for untimed sources.")
-                spans = segments.get(timestamp, [])
+    def validate_evidence(evidence, location, interval=None):
+        for index, citation in enumerate(evidence):
+            reason = None
+            if request["version"] == 2:
+                source_id = citation["source_id"]
+                # JSON Schema treats integral floats as integers; source identities
+                # deliberately require actual integers and never bools.
+                if type(source_id) is not int or not 0 <= source_id < len(catalog):
+                    reason = "unknown_or_invalid_source_id"
+                    timestamp = None
+                else:
+                    entry = catalog[source_id]
+                    timestamp = entry["timestamp"]
+                    evidence[index] = {"timestamp": timestamp, "quote": entry["quote"]}
             else:
-                if timestamp is not None:
-                    raise ValueError(f"{location}: cannot invent a timestamp for an untimed source.")
-                spans = [transcript]
-            if not any(quote in span for span in spans):
-                raise ValueError(f"{location}: quote is not an exact source span at timestamp {timestamp!r}: {quote!r}.")
+                timestamp, quote = citation["timestamp"], citation["quote"]
+                if segments:
+                    if timestamp is None:
+                        reason = "null citation timestamp is only valid for untimed sources"
+                    spans = segments.get(timestamp, [])
+                else:
+                    if timestamp is not None:
+                        reason = "cannot invent a timestamp for an untimed source"
+                    spans = [transcript]
+                if reason is None and not any(quote in span for span in spans):
+                    reason = "quote is not an exact source span at timestamp"
+            if reason is None and interval is not None and (
+                timestamp is None or not interval["start"] <= timestamp < interval["end"]
+            ):
+                reason = "range evidence timestamp must lie in [start, end)"
+            if reason:
+                failures.append(f"{location}.evidence[{index}]: {reason}")
 
-    for index, takeaway in enumerate(response["takeaways"]):
+    for index, takeaway in enumerate(resolved["takeaways"]):
         validate_evidence(takeaway["evidence"], f"takeaways[{index}]")
-    for category, signal in response["signal"].items():
+    for category, signal in resolved["signal"].items():
         validate_evidence(signal["evidence"], f"signal.{category}")
     for category in ("worth_watching", "skippable"):
-        for index, interval in enumerate(response[category]):
+        for index, interval in enumerate(resolved[category]):
             location = f"{category}[{index}]"
             if not segments:
-                raise ValueError(f"{location}: cannot invent timestamp ranges for an untimed source.")
+                failures.append(f"{location}: cannot invent timestamp ranges for an untimed source")
             if interval["end"] <= interval["start"]:
-                raise ValueError(f"{location}: end must be greater than start.")
+                failures.append(f"{location}: end must be greater than start")
             if duration is not None and interval["end"] > duration:
-                raise ValueError(f"{location}: range exceeds known Duration {duration:g}.")
-            validate_evidence(interval["evidence"], location)
-            for citation in interval["evidence"]:
-                if not interval["start"] <= citation["timestamp"] < interval["end"]:
-                    raise ValueError(f"{location}: evidence timestamp must lie in [start, end).")
-    return title, metadata
+                failures.append(f"{location}: range exceeds known Duration")
+            validate_evidence(interval["evidence"], location, interval)
+    if failures:
+        raise ValueError(f"Evidence validation: failures={len(failures)}; " + "; ".join(failures[:20]))
+    return title, metadata, resolved
 
 
 def _literal(text: str) -> str:
@@ -299,8 +344,8 @@ def publish_evaluation(request_path: Path, response_path: Path, output_dir: Path
     response_path = Path(response_path).expanduser().resolve()
     request = _strict_json(request_path.read_bytes().decode("utf-8"), "Request")
     response = _strict_json(response_path.read_bytes().decode("utf-8"), "Response")
-    title, metadata = _validate(request, response)
-    document = add_evaluation(request["source_document"], _report(response, metadata))
+    title, metadata, resolved = _validate(request, response)
+    document = add_evaluation(request["source_document"], _report(resolved, metadata))
     html_document = build_evaluation_html(document)
     directory = Path(output_dir).expanduser().resolve() if output_dir is not None else request_path.parent
     directory.mkdir(parents=True, exist_ok=True)
@@ -339,14 +384,8 @@ def evaluate_transcript(
     request_path = prepare_evaluation(source, background, output_dir)
     packet = _strict_json(request_path.read_text(encoding="utf-8"), "Request")
     _, metadata, transcript = parse_transcript_document(packet["source_document"])
-    segments = _segments(transcript, _duration(metadata["Duration"]))
-    # Offer exact citation candidates with numeric times, avoiding model
-    # timestamp arithmetic. The original source remains the validation authority.
-    citation_lookup = [
-        {"timestamp": timestamp, "quote": line.strip()}
-        for timestamp, spans in (segments.items() if segments else [(None, [transcript])])
-        for span in spans for line in re.split(r"\r\n|\r|\n", span) if line.strip()
-    ]
+    # Lookup is invocation-only; publication always reconstructs it from source.
+    citation_lookup = _source_catalog(transcript, _duration(metadata["Duration"]))
     response = invoke_evaluator(
         {**packet, "citation_lookup": citation_lookup},
         read_asset("evaluator-instructions.md"),

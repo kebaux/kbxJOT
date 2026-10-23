@@ -60,6 +60,21 @@ def _resign(packet):
     ).encode("utf-8")).hexdigest()
 
 
+def _legacy_packet(packet):
+    """Construct the exact persisted v1 protocol, independently of new preparation defaults."""
+    packet["version"] = 1
+    packet["response_schema"] = json.loads(jot_agent.read_asset("evaluation-response-v1.schema.json"))
+    _resign(packet)
+    return packet
+
+
+def _id_response(request_id):
+    response = _response(request_id)
+    response["takeaways"][0]["evidence"] = [{"source_id": 0}]
+    response["worth_watching"][0]["evidence"] = [{"source_id": 0}]
+    return response
+
+
 class AgentWorkflowTests(unittest.TestCase):
     def setUp(self):
         self.stack = ExitStack()
@@ -70,7 +85,7 @@ class AgentWorkflowTests(unittest.TestCase):
         self.document = jot._build_transcript_markdown(self.metadata, _BODY, _URL, "YouTube captions (manual)")
         self.source.write_bytes(self.document.encode("utf-8"))
         self.request_path = jot_agent.prepare_evaluation(self.source)
-        self.packet = json.loads(self.request_path.read_text(encoding="utf-8"))
+        self.packet = _legacy_packet(json.loads(self.request_path.read_text(encoding="utf-8")))
         self.response_path = self.directory / "response.json"
         self.response = _response(self.packet["request_id"])
         self.output = self.directory / "published"
@@ -95,6 +110,13 @@ class AgentWorkflowTests(unittest.TestCase):
         self.packet["source_document"] = self.document
         _resign(self.packet)
         self.response["request_id"] = self.packet["request_id"]
+
+    def test_persisted_v1_schema_semantics_are_immutable(self):
+        # Pin the original persisted protocol independently of the asset used by
+        # fixtures. Whitespace/formatting may change; compatibility semantics may not.
+        canonical = json.dumps(self.packet['response_schema'], sort_keys=True, separators=(',', ':'))
+        self.assertEqual(hashlib.sha256(canonical.encode()).hexdigest(),
+                         '30615a4ba7b3a01ed475be149fcd3ae4390ed829203479a9ed628ddcefb54c4d')
 
     def test_complete_packet_digest_and_collision_safe_preparation(self):
         payload = {key: value for key, value in self.packet.items() if key != "request_id"}
@@ -131,7 +153,7 @@ class AgentWorkflowTests(unittest.TestCase):
         self.document = "\ufeff" + self.document.replace("\n", "\r\n").replace("Cache invalidation", "Caché invalidation")
         self.source.write_bytes(self.document.encode("utf-8"))
         self.request_path = jot_agent.prepare_evaluation(self.source)
-        self.packet = json.loads(self.request_path.read_text(encoding="utf-8"))
+        self.packet = _legacy_packet(json.loads(self.request_path.read_text(encoding="utf-8")))
         self.response = _response(self.packet["request_id"], quote="Caché invalidation needs explicit ownership.")
         markdown, html = self.publish()
         saved = markdown.read_bytes().decode("utf-8")
@@ -163,7 +185,7 @@ class AgentWorkflowTests(unittest.TestCase):
 
     def test_unsupported_boolean_version_and_extra_packet_fields_are_rejected(self):
         original = copy.deepcopy(self.packet)
-        for version in (True, 1.0, 2):
+        for version in (True, 1.0, 3):
             with self.subTest(version=version):
                 self.packet = copy.deepcopy(original)
                 self.packet["version"] = version
@@ -203,7 +225,7 @@ class AgentWorkflowTests(unittest.TestCase):
         original_read = jot_agent.read_asset
 
         def bad_schema(name):
-            if name == "evaluation-response.schema.json":
+            if name == "evaluation-response-v1.schema.json":
                 return '{"type": "not-a-json-schema-type"}'
             return original_read(name)
 
@@ -555,7 +577,7 @@ class AgentWorkflowTests(unittest.TestCase):
                 source_bytes = document.encode("utf-8")
                 self.source.write_bytes(source_bytes)
                 self.request_path = jot_agent.prepare_evaluation(self.source)
-                self.packet = json.loads(self.request_path.read_text(encoding="utf-8"))
+                self.packet = _legacy_packet(json.loads(self.request_path.read_text(encoding="utf-8")))
                 self.response = _response(self.packet["request_id"], timestamp=timestamp)
                 if interval is None:
                     self.response["worth_watching"] = []
@@ -581,7 +603,7 @@ class AgentCLITests(unittest.TestCase):
         self.stack.enter_context(patch("jot_evaluator.find_evaluator", return_value="/fixture/claude"))
         self.evaluate = self.stack.enter_context(patch(
             "jot_evaluator.invoke_evaluator",
-            side_effect=lambda packet, instructions, **kwargs: _response(packet["request_id"]),
+            side_effect=lambda packet, instructions, **kwargs: _id_response(packet["request_id"]),
         ))
         self.metadata = self.stack.enter_context(patch.object(jot, "_get_video_metadata", return_value={
             "title": "CLI Talk", "channel": "Test Channel", "duration": 20,
@@ -616,12 +638,14 @@ class AgentCLITests(unittest.TestCase):
 
     def test_invalid_evaluator_evidence_cannot_be_published(self):
         def invalid_response(packet, instructions, **kwargs):
-            return _response(packet["request_id"], quote="This quote is not in the video.")
+            response = _id_response(packet["request_id"])
+            response["takeaways"][0]["evidence"] = [{"source_id": 999}]
+            return response
 
         self.evaluate.side_effect = invalid_response
         code, _, error = self.cli([_URL, "--evaluate", "-o", str(self.directory)])
         self.assertEqual(code, 1)
-        self.assertIn("not an exact source span", error)
+        self.assertIn("unknown_or_invalid_source_id", error)
         self.assertTrue((self.directory / "CLI Talk.md").is_file())
         self.assertEqual(list(self.directory.glob("*.evaluation.*")), [])
 
@@ -665,7 +689,7 @@ class AgentCLITests(unittest.TestCase):
         }
 
         def new_response(packet, instructions, **kwargs):
-            response = _response(packet["request_id"], quote=new_quote)
+            response = _id_response(packet["request_id"])
             response["takeaways"][0]["idea"] = "Version cache entries"
             return response
 
